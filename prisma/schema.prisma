@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model contract {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisation_id String       @db.Uuid
+  client_name     String       @db.VarChar(255)
+  client_email    String       @db.VarChar(255)
+  contract_number String       @db.VarChar(255)
+  start_date      DateTime     @db.Date
+  end_date        DateTime     @db.Date
+  status          String       @db.VarChar(255)
+  organisation    organisation @relation(fields: [organisation_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model invoice {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisation_id String       @db.Uuid
+  client_name     String       @db.VarChar(255)
+  client_email    String       @db.VarChar(255)
+  invoice_number  String       @db.VarChar(255)
+  due_date        DateTime     @db.Date
+  status          String       @db.VarChar(255)
+  organisation    organisation @relation(fields: [organisation_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  payment         payment[]
+}
+
+model organisation {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String              @db.VarChar(255)
+  owner_id          String              @db.Uuid
+  contract          contract[]
+  invoice           invoice[]
+  user              user                @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_organisation user_organisation[]
+}
+
+model payment {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  invoice_id     String   @db.Uuid
+  amount         Int
+  payment_date   DateTime @db.Date
+  payment_method String   @db.VarChar(255)
+  invoice        invoice  @relation(fields: [invoice_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email             String              @unique @db.VarChar(255)
+  firstName         String?             @db.VarChar(255)
+  lastName          String?             @db.VarChar(255)
+  roq_user_id       String              @db.VarChar(255)
+  tenant_id         String              @db.VarChar(255)
+  organisation      organisation[]
+  user_organisation user_organisation[]
+}
+
+model user_organisation {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String       @db.Uuid
+  organisation_id String       @db.Uuid
+  organisation    organisation @relation(fields: [organisation_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user            user         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
